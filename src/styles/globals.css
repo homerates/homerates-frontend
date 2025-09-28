@@ -1,0 +1,177 @@
+﻿@import "tailwindcss";
+
+/* ——— Tailwind sources (safe globs) ——— */
+@source "../pages/**/*.{js,jsx,ts,tsx,md,mdx}";
+@source "../components/**/*.{js,jsx,ts,tsx,md,mdx}";
+@source "../app/**/*.{js,jsx,ts,tsx,md,mdx}";
+
+/* ——— Theme tokens ——— */
+@layer base {
+  :root {
+    --bg:        255 255 255;         /* white */
+    --fg:        17 24 39;            /* slate-900 */
+    --muted:     107 114 128;         /* gray-500 */
+    --panel:     250 250 250;         /* neutral-50 */
+    --border:    229 231 235;         /* gray-200 */
+    --accent:    37 99 235;           /* blue-600 */
+    --accent-2:  59 130 246;          /* blue-500 */
+    --success:   16 185 129;          /* emerald-500 */
+    --warning:   245 158 11;          /* amber-500 */
+    --danger:    239 68 68;           /* red-500 */
+    --code-bg:   246 248 250;         /* light code bg */
+  }
+  .dark {
+    --bg:        17 24 39;            /* slate-900 */
+    --fg:        226 232 240;         /* slate-200 */
+    --muted:     148 163 184;         /* slate-400 */
+    --panel:     15 23 42;            /* slate-800 */
+    --border:    51 65 85;            /* slate-700 */
+    --accent:    59 130 246;          /* blue-500 */
+    --accent-2:  96 165 250;          /* blue-400 */
+    --success:   16 185 129;
+    --warning:   245 158 11;
+    --danger:    239 68 68;
+    --code-bg:   2 6 23;              /* slate-950-ish */
+  }
+
+  html, body {
+    @apply h-full;
+    background-color: rgb(var(--bg));
+    color: rgb(var(--fg));
+  }
+
+  body {
+    @apply antialiased;
+  }
+}
+
+/* ——— Global helpers ——— */
+@layer utilities {
+  .container-prose { @apply mx-auto max-w-3xl px-4; }
+  .container-wide  { @apply mx-auto max-w-6xl px-4; }
+  .text-muted      { color: rgb(var(--muted)); }
+  .card            { @apply rounded-2xl border p-4; border-color: rgb(var(--border)); background-color: rgb(var(--panel)); }
+  .shadow-soft     { box-shadow: 0 4px 24px rgba(0,0,0,.06); }
+  .ring-focus      { box-shadow: 0 0 0 3px rgba(59,130,246,.3); }
+}
+
+/* ——— Chat layout (like ChatGPT) ——— */
+@layer components {
+  .chat-shell {
+    @apply flex h-dvh flex-col;
+    background: linear-gradient(180deg, rgba(0,0,0,0.02) 0%, rgba(0,0,0,0) 30%);
+  }
+
+  .chat-header {
+    @apply sticky top-0 z-10 border-b bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50 px-4 py-3;
+    border-color: rgb(var(--border));
+  }
+  .dark .chat-header {
+    @apply bg-slate-900/70 supports-[backdrop-filter]:bg-slate-900/50;
+  }
+
+  .chat-main {
+    @apply container-prose flex-1 w-full;
+    max-width: 900px;
+  }
+
+  .chat-stream {
+    @apply flex flex-col gap-3 py-4;
+  }
+
+  .chat-inputbar {
+    @apply sticky bottom-0 border-t bg-white/70 backdrop-blur supports-[backdrop-filter]:bg-white/50;
+    border-color: rgb(var(--border));
+  }
+  .dark .chat-inputbar {
+    @apply bg-slate-900/70 supports-[backdrop-filter]:bg-slate-900/50;
+  }
+
+  /* Message bubbles */
+  .msg {
+    @apply rounded-2xl px-4 py-3 max-w-[85%] leading-relaxed whitespace-pre-wrap;
+    border: 1px solid rgb(var(--border));
+    background-color: rgb(var(--panel));
+  }
+  .msg-bot   { @apply self-start; }
+  .msg-user  {
+    @apply self-end text-white border-0;
+    background: linear-gradient(180deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  }
+
+  /* Typing dots */
+  .typing { @apply inline-flex gap-1 align-middle select-none;
+    --dot: 9px;
+  }
+  .typing > span {
+    width: var(--dot); height: var(--dot);
+    @apply rounded-full bg-slate-300 dark:bg-slate-600;
+    animation: typing 1.2s infinite ease-in-out;
+  }
+  .typing > span:nth-child(2){ animation-delay: .15s; }
+  .typing > span:nth-child(3){ animation-delay: .3s; }
+
+  @keyframes typing {
+    0%, 80%, 100% { transform: translateY(0); opacity:.8; }
+    40% { transform: translateY(-3px); opacity:1; }
+  }
+
+  /* Input area */
+  .chat-form   { @apply container-prose py-3; max-width: 900px; }
+  .chat-row    { @apply flex gap-2 items-end; }
+  .chat-input  { @apply flex-1 rounded-2xl border px-4 py-3;
+                 border-color: rgb(var(--border));
+                 background-color: rgb(var(--bg)); }
+  .chat-input:focus { @apply outline-none; box-shadow: 0 0 0 3px rgba(59,130,246,.25); }
+
+  .btn {
+    @apply rounded-xl px-4 py-2 font-medium border;
+    border-color: rgb(var(--border));
+    background: linear-gradient(180deg, #fff, #f8fafc);
+  }
+  .btn-primary {
+    @apply text-white border-0;
+    background: linear-gradient(180deg, rgb(var(--accent)), rgb(var(--accent-2)));
+  }
+
+  /* System bars & meta */
+  .notice {
+    @apply text-xs text-muted text-center py-2;
+  }
+
+  /* Scrollbar (WebKit) */
+  .chat-stream::-webkit-scrollbar,
+  .chat-main::-webkit-scrollbar { width: 10px; }
+  .chat-stream::-webkit-scrollbar-thumb,
+  .chat-main::-webkit-scrollbar-thumb {
+    background: rgba(100,116,139,.35);
+    border-radius: 999px;
+  }
+}
+
+/* ——— Markdown & code in assistant messages ——— */
+@layer components {
+  .prose {
+    @apply leading-relaxed;
+  }
+  .prose p { @apply my-3; }
+  .prose h1 { @apply text-2xl font-semibold mt-6 mb-3; }
+  .prose h2 { @apply text-xl font-semibold mt-5 mb-2; }
+  .prose h3 { @apply text-lg font-semibold mt-4 mb-2; }
+  .prose ul { @apply list-disc pl-6 my-3; }
+  .prose ol { @apply list-decimal pl-6 my-3; }
+  .prose a  { @apply underline decoration-1 underline-offset-2 text-blue-600 dark:text-blue-400; }
+
+  .prose code {
+    @apply rounded px-1.5 py-0.5 text-[.9em];
+    background: rgb(var(--code-bg));
+    border: 1px solid rgba(148,163,184,.25);
+  }
+
+  .codeblock {
+    @apply rounded-xl border my-3 overflow-auto;
+    border-color: rgb(var(--border));
+    background: rgb(var(--code-bg));
+  }
+  .codeblock pre { @apply p-4 text-sm leading-6; }
+}
