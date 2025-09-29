@@ -1,50 +1,75 @@
-// POST /api/chat
-// Body: { messages: [{ role: "user"|"assistant"|"system", content: string }, ...] }
-// Needs: OPENAI_API_KEY in .env.local  (no quotes)
+﻿import { useState, useRef, useEffect } from "react";
 
-export default async function handler(req, res) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" })
+export default function Chat() {
+  const [messages, setMessages] = useState([
+    { role: "assistant", content: "Hi! I’m the HomeRates.ai assistant. How can I help?" }
+  ]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+  const listRef = useRef(null);
 
-  try {
-    // support either string or parsed body
-    const body =
-      typeof req.body === "string" ? JSON.parse(req.body || "{}") : (req.body || {})
+  useEffect(() => {
+    if (listRef.current) listRef.current.scrollTop = listRef.current.scrollHeight;
+  }, [messages]);
 
-    const messages = Array.isArray(body.messages) ? body.messages : null
-    if (!messages) return res.status(400).json({ error: "messages must be an array" })
-
-    const key = process.env.OPENAI_API_KEY
-    if (!key) {
-      return res.status(500).json({
-        error: "Missing OPENAI_API_KEY in .env.local (add it and restart dev server)"
-      })
+  async function onSubmit(e) {
+    e.preventDefault();
+    const text = input.trim();
+    if (!text) return;
+    const userMsg = { role: "user", content: text };
+    const next = [...messages, userMsg];
+    setMessages(next);
+    setInput("");
+    setLoading(true);
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ messages: next })
+      });
+      const data = await res.json();
+      const reply = data?.reply || "No reply";
+      setMessages([...next, { role: "assistant", content: reply }]);
+    } catch (err) {
+      setMessages([...next, { role: "assistant", content: `Error: ${err?.message || err}` }]);
+    } finally {
+      setLoading(false);
     }
-
-    const system = {
-      role: "system",
-      content:
-        "You are the HomeRates.ai assistant. Be concise and practical. " +
-        "Explain mortgage concepts plainly; show math when useful. Educational only.",
-    }
-
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Authorization: `Bearer ${key}` },
-      body: JSON.stringify({
-        model: "gpt-4o-mini",
-        temperature: 0.3,
-        messages: [system, ...messages],
-      }),
-    })
-
-    const raw = await r.text()
-    if (!r.ok) return res.status(500).json({ error: `OpenAI ${r.status} ${r.statusText}: ${raw}` })
-
-    let data; try { data = JSON.parse(raw) } catch { return res.status(500).json({ error: `Non-JSON from OpenAI: ${raw}` }) }
-
-    const reply = data?.choices?.[0]?.message?.content || "No reply generated."
-    return res.status(200).json({ reply })
-  } catch (e) {
-    return res.status(500).json({ error: `Server error: ${e?.message || e}` })
   }
+
+  return (
+    <div style={{display:"flex",flexDirection:"column",height:"100vh"}}>
+      <header style={{padding:"12px 16px",borderBottom:"1px solid #eee"}}>
+        <strong>HomeRates.ai Chat</strong>
+      </header>
+
+      <main ref={listRef} style={{flex:"1 1 auto",overflowY:"auto",padding:"16px",background:"#fafafa"}}>
+        {messages.map((m, i) => (
+          <div key={i} style={{
+            maxWidth:"70%", margin:"8px 0",
+            padding:"10px 12px", borderRadius:"12px",
+            background: m.role === "user" ? "#cce5ff" : "#fff",
+            border: "1px solid #e5e5e5",
+            alignSelf: m.role === "user" ? "flex-end" : "flex-start",
+            whiteSpace: "pre-wrap"
+          }}>
+            {m.content}
+          </div>
+        ))}
+        {loading && <div style={{opacity:0.6, fontStyle:"italic"}}>Thinking…</div>}
+      </main>
+
+      <form onSubmit={onSubmit} style={{display:"flex",gap:"8px",padding:"12px",borderTop:"1px solid #eee"}}>
+        <input
+          value={input}
+          onChange={(e)=>setInput(e.target.value)}
+          placeholder="Ask about rates, payments, scenarios…"
+          style={{flex:1,padding:"10px 12px",border:"1px solid #ddd",borderRadius:8}}
+        />
+        <button type="submit" disabled={loading} style={{padding:"10px 14px",borderRadius:8,border:"1px solid #0a7",background:"#0a7",color:"#fff"}}>
+          {loading ? "Sending…" : "Send"}
+        </button>
+      </form>
+    </div>
+  );
 }
